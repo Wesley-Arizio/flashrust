@@ -1,5 +1,5 @@
 use axum::{
-    routing::get,
+    routing::post,
     Router,
 };
 
@@ -7,6 +7,9 @@ use dotenvy::dotenv;
 use tracing_subscriber::filter::EnvFilter;
 
 use clap::{Parser, command};
+
+pub mod handlers;
+
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -27,7 +30,8 @@ async fn main() {
 
     let args = Args::parse();
 
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+    let app = Router::new()
+        .route("/sign_up", post(crate::handlers::sign_up::sign_up));
 
     match tokio::net::TcpListener::bind(&args.address).await {
         Ok(listener) => {
