@@ -1,15 +1,13 @@
-use axum::{
-    routing::post,
-    Router,
-};
+use axum::{Router, routing::post};
 
 use dotenvy::dotenv;
-use tracing_subscriber::filter::EnvFilter;
 
 use clap::{Parser, command};
 
 pub mod handlers;
 
+pub mod database;
+pub mod server;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -25,13 +23,12 @@ async fn main() {
 
     tracing_subscriber::fmt()
         .pretty()
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_max_level(tracing::Level::TRACE)
         .init();
 
     let args = Args::parse();
 
-    let app = Router::new()
-        .route("/sign_up", post(crate::handlers::sign_up::sign_up));
+    let app = Router::new().route("/sign_up", post(crate::handlers::sign_up::sign_up));
 
     match tokio::net::TcpListener::bind(&args.address).await {
         Ok(listener) => {
@@ -39,9 +36,9 @@ async fn main() {
             if let Err(e) = axum::serve(listener, app).await {
                 tracing::error!("Error starting auth microservice: {:?}", e);
             }
-        },
+        }
         Err(e) => {
             tracing::error!("Error binding server to the address: {:?}", e);
-        },
+        }
     };
 }
