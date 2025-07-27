@@ -8,7 +8,7 @@ use axum::{
     routing::post,
 };
 use serde::Serialize;
-use sqlx::Pool;
+use sqlx::{Pool, Postgres};
 
 use crate::database::traits::CredentialsEntityRepository;
 
@@ -23,6 +23,7 @@ pub enum ServerError {
 impl From<sqlx::Error> for ServerError {
     fn from(value: sqlx::Error) -> Self {
         tracing::error!("DatabaseError: {:?}", value);
+        println!("DatabaseError: {:?}", value);
         ServerError::InternalServerError("Internal Server Error".to_string())
     }
 }
@@ -46,7 +47,7 @@ impl IntoResponse for ServerError {
                     "Internal Server Error".to_string(),
                 )
             }
-            ServerError::Unauthorized => (StatusCode::UNAUTHORIZED, "Invalid Access".to_string()),
+            ServerError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
             ServerError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
         };
 
@@ -76,7 +77,7 @@ where
     R: CredentialsEntityRepository + Send + Sync + 'static,
     R::Error: Into<ServerError>,
 {
-    data: PhantomData<R>,
+    phantom_data: PhantomData<R>,
 }
 
 impl<R> App<R>
@@ -90,5 +91,22 @@ where
         Router::new()
             .route("/sign_up", post(crate::handlers::sign_up::sign_up::<R>))
             .with_state(app_state)
+    }
+
+    #[cfg(feature = "default")]
+    pub async fn run(pool: Pool<Postgres>, address: &str) {
+        let app = App::<crate::database::postgres::PostgresCredentialsRepository>::new(pool);
+
+        match tokio::net::TcpListener::bind(&address).await {
+            Ok(listener) => {
+                tracing::info!("Auth server running at https://{}", address);
+                if let Err(e) = axum::serve(listener, app).await {
+                    tracing::error!("Error starting auth microservice: {:?}", e);
+                }
+            }
+            Err(e) => {
+                tracing::error!("Error binding server to the address: {:?}", e);
+            }
+        };
     }
 }

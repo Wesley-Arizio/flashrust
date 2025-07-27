@@ -36,17 +36,5 @@ async fn main() {
         .await
         .expect("Could not connect with database");
 
-    let app = App::<CredentialsRepository>::new(pool);
-
-    match tokio::net::TcpListener::bind(&args.address).await {
-        Ok(listener) => {
-            tracing::info!("Auth server running at https://{}", args.address);
-            if let Err(e) = axum::serve(listener, app).await {
-                tracing::error!("Error starting auth microservice: {:?}", e);
-            }
-        }
-        Err(e) => {
-            tracing::error!("Error binding server to the address: {:?}", e);
-        }
-    };
+    App::<CredentialsRepository>::run(pool, &args.address).await;
 }
