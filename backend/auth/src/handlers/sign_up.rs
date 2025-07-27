@@ -21,6 +21,7 @@ pub async fn sign_up<R>(
 ) -> Result<CredentialDTO, ServerError>
 where
     R: CredentialsEntityRepository,
+    R::Error: Into<ServerError>,
 {
     if !is_valid_email(&payload.email)? {
         return Err(ServerError::BadRequest("Invalid Email Format".to_string()));
@@ -32,11 +33,15 @@ where
         ));
     }
 
-    let mut tx = state.pool.begin().await.map_err(|e| ServerError::InternalServerError(e.to_string()))?;
+    let mut tx = state
+        .pool
+        .begin()
+        .await
+        .map_err(|e| ServerError::InternalServerError(e.to_string()))?;
 
     let exists = R::exists(&mut tx, &payload.email)
         .await
-        .map_err(|e| ServerError::InternalServerError(e.to_string()))?;
+        .map_err(|e| e.into())?;
 
     if exists {
         return Err(ServerError::Unauthorized);
@@ -50,7 +55,7 @@ where
 
     let create_credential = R::create(&mut tx, credential_dao)
         .await
-        .map_err(|e| ServerError::InternalServerError(e.to_string()))?;
+        .map_err(|e| e.into())?;
 
     tx.commit()
         .await

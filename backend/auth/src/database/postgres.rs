@@ -7,15 +7,15 @@ pub struct PostgresCredentialsRepository {}
 #[async_trait::async_trait]
 impl CredentialsEntityRepository for PostgresCredentialsRepository {
     type Db = Postgres;
-    type Error = String;
+    type Error = sqlx::Error;
 
     async fn exists(tx: &mut Transaction<'_, Self::Db>, email: &str) -> Result<bool, Self::Error> {
-        let result =
-            sqlx::query_as::<_, (bool,)>("SELECT EXISTS (SELECT 1 FROM credentials where email = $1)")
-                .bind(email)
-                .fetch_one(&mut **tx)
-                .await
-                .unwrap();
+        let result = sqlx::query_as::<_, (bool,)>(
+            "SELECT EXISTS (SELECT 1 FROM credentials where email = $1)",
+        )
+        .bind(email)
+        .fetch_one(&mut **tx)
+        .await?;
         Ok(result.0)
     }
 
@@ -27,8 +27,7 @@ impl CredentialsEntityRepository for PostgresCredentialsRepository {
             .bind(credential.email)
             .bind(credential.password)
             .fetch_one(&mut **tx)
-            .await
-            .map_err(|e| e.to_string())?;
+            .await?;
 
         Ok(result)
     }

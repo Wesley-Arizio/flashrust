@@ -1,5 +1,7 @@
 use sqlx::{Database, Transaction, types::Uuid};
 
+use crate::server::ServerError;
+
 #[derive(sqlx::FromRow, PartialEq, Eq, Clone)]
 pub struct CredentialDAO {
     pub id: Uuid,
@@ -16,7 +18,7 @@ pub struct CreateCredentialDAO {
 #[async_trait::async_trait]
 pub trait CredentialsEntityRepository {
     type Db: Database;
-    type Error: ToString;
+    type Error: Into<ServerError>;
 
     async fn exists(tx: &mut Transaction<'_, Self::Db>, email: &str) -> Result<bool, Self::Error>;
     async fn create(

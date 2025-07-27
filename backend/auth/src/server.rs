@@ -15,6 +15,13 @@ pub enum ServerError {
     BadRequest(String),
 }
 
+impl From<sqlx::Error> for ServerError {
+    fn from(value: sqlx::Error) -> Self {
+        tracing::error!("DatabaseError: {:?}", value);
+        ServerError::InternalServerError("Internal Server Error".to_string())
+    }
+}
+
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         #[derive(Serialize)]
