@@ -1,8 +1,13 @@
+use std::sync::Arc;
+
 use axum::{Router, routing::post};
 
 use dotenvy::dotenv;
 
 use clap::{Parser, command};
+use sqlx::PgPool;
+
+use crate::{database::CredentialsRepository, server::AppState};
 
 pub mod handlers;
 
@@ -15,6 +20,9 @@ pub struct Args {
     /// Server address
     #[arg(long, env = "AUTH_SERVER_ADDRESS")]
     address: String,
+
+    #[arg(long, env = "AUTH_DATABASE_URL")]
+    database_url: String,
 }
 
 #[tokio::main]
@@ -28,7 +36,18 @@ async fn main() {
 
     let args = Args::parse();
 
-    let app = Router::new().route("/sign_up", post(crate::handlers::sign_up::sign_up));
+    let pool = PgPool::connect(&args.database_url)
+        .await
+        .expect("Could not connect with database");
+
+    let app_state = Arc::new(AppState::new(pool));
+
+    let app = Router::new()
+        .route(
+            "/sign_up",
+            post(crate::handlers::sign_up::sign_up::<CredentialsRepository>),
+        )
+        .with_state(app_state);
 
     match tokio::net::TcpListener::bind(&args.address).await {
         Ok(listener) => {
