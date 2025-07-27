@@ -1,13 +1,9 @@
-use std::sync::Arc;
-
-use axum::{Router, routing::post};
-
 use dotenvy::dotenv;
 
 use clap::{Parser, command};
 use sqlx::PgPool;
 
-use crate::{database::CredentialsRepository, server::AppState};
+use crate::{database::CredentialsRepository, server::App};
 
 pub mod handlers;
 
@@ -40,14 +36,7 @@ async fn main() {
         .await
         .expect("Could not connect with database");
 
-    let app_state = Arc::new(AppState::new(pool));
-
-    let app = Router::new()
-        .route(
-            "/sign_up",
-            post(crate::handlers::sign_up::sign_up::<CredentialsRepository>),
-        )
-        .with_state(app_state);
+    let app = App::<CredentialsRepository>::new(pool);
 
     match tokio::net::TcpListener::bind(&args.address).await {
         Ok(listener) => {

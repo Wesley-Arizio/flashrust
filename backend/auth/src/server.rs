@@ -1,11 +1,16 @@
+use std::{marker::PhantomData, sync::Arc};
+
 use axum::{
-    Json,
+    Json, Router,
     extract::rejection::JsonRejection,
     http::StatusCode,
     response::{IntoResponse, Response},
+    routing::post,
 };
 use serde::Serialize;
 use sqlx::Pool;
+
+use crate::database::traits::CredentialsEntityRepository;
 
 #[derive(Debug)]
 pub enum ServerError {
@@ -49,6 +54,7 @@ impl IntoResponse for ServerError {
     }
 }
 
+#[derive(Clone)]
 pub struct AppState<Db>
 where
     Db: sqlx::Database,
@@ -62,5 +68,27 @@ where
 {
     pub fn new(pool: Pool<Db>) -> Self {
         Self { pool }
+    }
+}
+
+pub struct App<R>
+where
+    R: CredentialsEntityRepository + Send + Sync + 'static,
+    R::Error: Into<ServerError>,
+{
+    data: PhantomData<R>,
+}
+
+impl<R> App<R>
+where
+    R: CredentialsEntityRepository + Send + Sync + 'static,
+    R::Error: Into<ServerError>,
+{
+    pub fn new(pool: Pool<R::Db>) -> Router {
+        let app_state = Arc::new(AppState::new(pool));
+
+        Router::new()
+            .route("/sign_up", post(crate::handlers::sign_up::sign_up::<R>))
+            .with_state(app_state)
     }
 }
