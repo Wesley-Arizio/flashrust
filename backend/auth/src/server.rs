@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 use axum::{
     Json, Router,
@@ -8,9 +8,9 @@ use axum::{
     routing::post,
 };
 use serde::Serialize;
-use sqlx::{Pool, Postgres};
+use sqlx::Pool;
 
-use crate::database::traits::CredentialsEntityRepository;
+use auth_database::{AuthDatabase, traits::DatabaseError};
 
 #[derive(Debug)]
 pub enum ServerError {
@@ -20,10 +20,9 @@ pub enum ServerError {
     BadRequest(String),
 }
 
-impl From<sqlx::Error> for ServerError {
-    fn from(value: sqlx::Error) -> Self {
+impl From<DatabaseError> for ServerError {
+    fn from(value: DatabaseError) -> Self {
         tracing::error!("DatabaseError: {:?}", value);
-        println!("DatabaseError: {:?}", value);
         ServerError::InternalServerError("Internal Server Error".to_string())
     }
 }
@@ -72,30 +71,21 @@ where
     }
 }
 
-pub struct App<R>
-where
-    R: CredentialsEntityRepository + Send + Sync + 'static,
-    R::Error: Into<ServerError>,
-{
-    phantom_data: PhantomData<R>,
-}
+pub struct App;
 
-impl<R> App<R>
-where
-    R: CredentialsEntityRepository + Send + Sync + 'static,
-    R::Error: Into<ServerError>,
-{
-    pub fn new(pool: Pool<R::Db>) -> Router {
+impl App {
+    pub async fn new(database_url: &str) -> Router {
+        let pool = AuthDatabase::connect(database_url).await.expect("Failed to connect to the database");
         let app_state = Arc::new(AppState::new(pool));
 
         Router::new()
-            .route("/sign_up", post(crate::handlers::sign_up::sign_up::<R>))
+            .route("/sign_up", post(crate::handlers::sign_up::sign_up))
             .with_state(app_state)
     }
 
     #[cfg(feature = "default")]
-    pub async fn run(pool: Pool<Postgres>, address: &str) {
-        let app = App::<crate::database::postgres::PostgresCredentialsRepository>::new(pool);
+    pub async fn run(database_url: &str, address: &str) {
+        let app = App::new(database_url).await;
 
         match tokio::net::TcpListener::bind(&address).await {
             Ok(listener) => {

@@ -1,13 +1,11 @@
 use dotenvy::dotenv;
 
 use clap::{Parser, command};
-use sqlx::PgPool;
 
-use crate::{database::CredentialsRepository, server::App};
+use crate::server::App;
 
+pub mod common;
 pub mod handlers;
-
-pub mod database;
 pub mod server;
 
 #[derive(Parser, Debug)]
@@ -32,9 +30,5 @@ async fn main() {
 
     let args = Args::parse();
 
-    let pool = PgPool::connect(&args.database_url)
-        .await
-        .expect("Could not connect with database");
-
-    App::<CredentialsRepository>::run(pool, &args.address).await;
+    App::run(&args.database_url, &args.address).await;
 }
