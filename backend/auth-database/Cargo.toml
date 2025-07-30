@@ -1,0 +1,19 @@
+[package]
+name = "auth-database"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+database = { path = "../database" }
+sqlx = { version = "0.8.0", features = ["runtime-tokio", "chrono", "postgres"] }
+uuid = {version =  "1.17", features = ["v4"] }
+
+[dev-dependencies]
+tokio = { version = "1.39.2", default-features = false, features = ["macros"] }
+sqlx = { version = "0.8.0", features = ["runtime-tokio-native-tls", "macros", "sqlite", "postgres"] }
+
+
+[features]
+default = ["sqlx/postgres"]
+integration = ["sqlx/postgres"]
+unit = ["sqlx/sqlite"]
