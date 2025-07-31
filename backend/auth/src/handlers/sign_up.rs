@@ -9,14 +9,14 @@ use axum::{Json, extract::State};
 
 use crate::{
     common::{hash_password, is_valid_email, is_valid_password},
-    handlers::dto::{CreateCredentialDTO, CredentialDTO},
+    handlers::dto::{CreateCredentialDTO, CredentialsDTO},
     server::{AppState, ServerError},
 };
 
 pub async fn sign_up<DB>(
     State(state): State<Arc<AppState<DB>>>,
     Json(payload): Json<CreateCredentialDTO>,
-) -> Result<CredentialDTO, ServerError>
+) -> Result<CredentialsDTO, ServerError>
 where
     DB: sqlx::Database,
     CredentialsRepository: EntityRepository<Db = DB>,
@@ -51,7 +51,7 @@ where
                 .await
                 .map_err(|e| ServerError::from(e))?;
 
-            Ok(CredentialDTO::from(create_credential))
+            Ok(CredentialsDTO::from(create_credential))
         })
     })
     .await
@@ -60,9 +60,7 @@ where
 #[cfg(any(feature = "unit", feature = "integration"))]
 #[cfg(test)]
 mod tests {
-    use crate::{
-        server::App,
-    };
+    use crate::server::App;
 
     use argon2::{Argon2, PasswordHash, PasswordVerifier};
     use axum::{
@@ -75,22 +73,35 @@ mod tests {
     use tower::Service;
     use tower::util::ServiceExt;
 
+    use sqlx::Pool;
+
     #[cfg(feature = "unit")]
-    async fn setup() -> Router {
-        App::new(":memory:").await
+    use sqlx::Sqlite;
+
+    #[cfg(feature = "integration")]
+    use sqlx::Postgres;
+
+    use auth_database::AuthDatabase;
+
+    #[cfg(feature = "unit")]
+    async fn setup() -> (Pool<Sqlite>, Router) {
+        let pool = AuthDatabase::connect(":memory:").await.unwrap();
+        (pool.clone(), App::new(pool).await)
     }
 
     #[cfg(feature = "integration")]
-    async fn setup() -> Router {
+    async fn setup() -> (Pool<Postgres>, Router) {
         dotenvy::dotenv().ok();
         let database_url = std::env::var("AUTH_DATABASE_URL")
             .expect("AUTH_DATABASE_URL must be set for integration tests");
-        App::new(&database_url).await
+
+        let pool = AuthDatabase::connect(&database_url).await.unwrap();
+        (pool.clone(), App::new(pool).await)
     }
 
     #[tokio::test]
     async fn signup_invalid_email() {
-        let app= setup().await;
+        let (_, app) = setup().await;
         let mut app = app.into_service();
         let body = serde_json::json!({
             "email": "owkmail.com",
@@ -113,7 +124,7 @@ mod tests {
 
     #[tokio::test]
     async fn signup_invalid_password() {
-        let app = setup().await;
+        let (_, app) = setup().await;
         let mut app = app.into_service();
         let body = serde_json::json!({
             "email": "owk@mail.com",
@@ -135,8 +146,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn signup_invalid_credentials() {
-        let app = setup().await;
+    async fn sign_up_credentials_already_exists() {
+        let (_, app) = setup().await;
 
         let body = serde_json::json!({
             "email": "owkw22222@mail.com",
@@ -151,7 +162,7 @@ mod tests {
             .body(Body::from(body.to_string()))
             .unwrap();
         let response = app.ready().await.unwrap().call(request).await.unwrap();
-    
+
         assert_eq!(response.status(), StatusCode::OK);
 
         let body = serde_json::json!({
@@ -175,7 +186,7 @@ mod tests {
 
     #[tokio::test]
     async fn signup_success() {
-        let app = setup().await;
+        let (_, app) = setup().await;
 
         let mut app = app.into_service();
         let body = serde_json::json!({

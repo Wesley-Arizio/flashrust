@@ -9,14 +9,14 @@ pub struct CreateCredentialDTO {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CredentialDTO {
+pub struct CredentialsDTO {
     pub id: String,
     pub email: String,
     pub password: String,
     pub active: bool,
 }
 
-impl From<CredentialsDAO> for CredentialDTO {
+impl From<CredentialsDAO> for CredentialsDTO {
     fn from(value: CredentialsDAO) -> Self {
         Self {
             id: value.id.to_string(),
@@ -27,7 +27,7 @@ impl From<CredentialsDAO> for CredentialDTO {
     }
 }
 
-impl IntoResponse for CredentialDTO {
+impl IntoResponse for CredentialsDTO {
     fn into_response(self) -> axum::response::Response {
         axum::Json::from(self).into_response()
     }
@@ -52,4 +52,10 @@ impl From<SessionsDAO> for SessionsDTO {
             active: value.active,
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SignInDTO {
+    pub email: String,
+    pub password: String,
 }

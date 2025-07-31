@@ -38,7 +38,10 @@ impl AuthDatabase {
         #[cfg(feature = "unit")]
         {
             let pool = SqlitePool::connect(url).await?;
-            sqlx::migrate!("./sqlite").run(&pool).await.expect("Failed to run sqlite migrations");
+            sqlx::migrate!("./sqlite")
+                .run(&pool)
+                .await
+                .expect("Failed to run sqlite migrations");
             Ok(pool)
         }
 

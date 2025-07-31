@@ -17,6 +17,7 @@ regex = "1.11.1"
 async-trait = "0.1.88"
 argon2 = "0.5.3"
 uuid = { version = "1", features = ["v4"] }
+cookie = "0.18.1"
 
 [dev-dependencies]
 tower = { version = "0.5.2", features = ["util"] }

@@ -10,7 +10,7 @@ use axum::{
 use serde::Serialize;
 use sqlx::Pool;
 
-use auth_database::{AuthDatabase, traits::DatabaseError};
+use auth_database::{AuthDatabase, DB, traits::DatabaseError};
 
 #[derive(Debug)]
 pub enum ServerError {
@@ -74,18 +74,22 @@ where
 pub struct App;
 
 impl App {
-    pub async fn new(database_url: &str) -> Router {
-        let pool = AuthDatabase::connect(database_url).await.expect("Failed to connect to the database");
+    pub async fn new(pool: Pool<DB>) -> Router {
         let app_state = Arc::new(AppState::new(pool));
 
         Router::new()
             .route("/sign_up", post(crate::handlers::sign_up::sign_up))
+            .route("/sign_in", post(crate::handlers::sign_in::sign_in))
             .with_state(app_state)
     }
 
     #[cfg(feature = "default")]
     pub async fn run(database_url: &str, address: &str) {
-        let app = App::new(database_url).await;
+        let pool: Pool<DB> = AuthDatabase::connect(&database_url)
+            .await
+            .expect("Failed to connect to the database");
+
+        let app = App::new(pool).await;
 
         match tokio::net::TcpListener::bind(&address).await {
             Ok(listener) => {
