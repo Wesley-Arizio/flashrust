@@ -103,7 +103,7 @@ where
     .await
 }
 
-fn cookie(value: &str, expires_at: OffsetDateTime) -> Cookie {
+fn cookie(value: &str, expires_at: OffsetDateTime) -> Cookie<'_> {
     Cookie::build((SESSION_KEY, value))
         .path("/")
         .secure(true)
