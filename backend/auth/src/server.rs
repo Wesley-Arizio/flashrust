@@ -83,7 +83,6 @@ impl App {
             .with_state(app_state)
     }
 
-    #[cfg(feature = "default")]
     pub async fn run(database_url: &str, address: &str) {
         let pool: Pool<DB> = AuthDatabase::connect(&database_url)
             .await
