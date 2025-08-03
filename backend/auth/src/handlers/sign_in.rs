@@ -51,8 +51,7 @@ where
 
     if payload.password.len() < MIN_LEN_PASSOWRD {
         return Err(ServerError::BadRequest(format!(
-            "Password must be at least {} characters long",
-            MIN_LEN_PASSOWRD
+            "Password must be at least {MIN_LEN_PASSOWRD} characters long",
         )));
     }
 
@@ -83,7 +82,7 @@ where
 
             let session = SessionsRepository::insert(tx, session)
                 .await
-                .map_err(|e| ServerError::from(e))?;
+                .map_err(ServerError::from)?;
 
             let id = session.id.to_string();
             let cookie = cookie(&id, session.expires_at.to_offset_datetime()?);
@@ -143,7 +142,7 @@ mod tests {
     #[cfg(feature = "unit")]
     async fn setup() -> (Pool<Sqlite>, Router) {
         let pool = AuthDatabase::connect(":memory:").await.unwrap();
-        (pool.clone(), App::new(pool).await)
+        (pool.clone(), App::app(pool).await)
     }
 
     #[cfg(feature = "integration")]
@@ -153,7 +152,7 @@ mod tests {
             .expect("AUTH_DATABASE_URL must be set for integration tests");
 
         let pool = AuthDatabase::connect(&database_url).await.unwrap();
-        (pool.clone(), App::new(pool).await)
+        (pool.clone(), App::app(pool).await)
     }
 
     #[tokio::test]

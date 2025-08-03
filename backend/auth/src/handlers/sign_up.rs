@@ -49,7 +49,7 @@ where
 
             let create_credential = CredentialsRepository::insert(tx, credential_dao)
                 .await
-                .map_err(|e| ServerError::from(e))?;
+                .map_err(ServerError::from)?;
 
             Ok(CredentialsDTO::from(create_credential))
         })
@@ -86,7 +86,7 @@ mod tests {
     #[cfg(feature = "unit")]
     async fn setup() -> (Pool<Sqlite>, Router) {
         let pool = AuthDatabase::connect(":memory:").await.unwrap();
-        (pool.clone(), App::new(pool).await)
+        (pool.clone(), App::app(pool).await)
     }
 
     #[cfg(feature = "integration")]
@@ -96,7 +96,7 @@ mod tests {
             .expect("AUTH_DATABASE_URL must be set for integration tests");
 
         let pool = AuthDatabase::connect(&database_url).await.unwrap();
-        (pool.clone(), App::new(pool).await)
+        (pool.clone(), App::app(pool).await)
     }
 
     #[tokio::test]

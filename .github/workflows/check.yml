@@ -1,0 +1,28 @@
+name: Check
+on:
+  pull_request:
+    branches: [ "main" ]
+env:
+  RUSTFLAGS: "-Dwarnings"
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    name: stable / fmt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: cargo fmt --check
+        working-directory: ./backend
+        run: cargo fmt --check
+  clippy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Clippy
+        working-directory: ./backend
+        run: cargo clippy
