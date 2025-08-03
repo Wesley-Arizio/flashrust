@@ -1,7 +1,7 @@
 name: Check
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "staging" ]
 env:
   RUSTFLAGS: "-Dwarnings"
 jobs:
