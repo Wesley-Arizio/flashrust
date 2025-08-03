@@ -21,16 +21,26 @@ jobs:
         image: postgres:15
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
         env:
           POSTGRES_USER: ${{ secrets.AUTH_POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.AUTH_POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.AUTH_POSTGRES_DB }}
     env:
-      AUTH_DATABASE_URL: postgres://${{ secrets.AUTH_POSTGRES_USER }}:${{ secrets.AUTH_POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.AUTH_POSTGRES_DB }}
+      AUTH_DATABASE_URL: postgres://${{ secrets.AUTH_POSTGRES_USER }}:${{ secrets.AUTH_POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.AUTH_POSTGRES_DB }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      - name: Run sqlx migrations
+        working-directory: ./backend/auth-database
+        run: sqlx migrate run --database-url=$AUTH_DATABASE_URL
       - name: Run integration tests in backend folder
         working-directory: ./backend
         run: cargo test --locked --features=integration
