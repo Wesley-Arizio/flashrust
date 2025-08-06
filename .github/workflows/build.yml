@@ -13,7 +13,8 @@ jobs:
         id: changed
         uses: tj-actions/changed-files@v44
       - name: Build Docker image if needed
+        working-directory: ./backend
         if: |
           contains(steps.changed.outputs.all_changed_files, 'backend/auth/') ||
           contains(steps.changed.outputs.all_changed_files, 'backend/auth/Dockerfile')
-        run: docker build -f backend/auth/Dockerfile -t flashrust-auth:pr-${{ github.event.pull_request.number }} .
+        run: docker build -f auth/Dockerfile -t flashrust-auth:pr-${{ github.event.pull_request.number }} .
