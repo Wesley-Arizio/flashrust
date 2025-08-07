@@ -19,19 +19,19 @@ pub enum DatabaseError {
 impl fmt::Display for DatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DatabaseError::NotFound(msg) => write!(f, "Not Found: {}", msg),
+            DatabaseError::NotFound(msg) => write!(f, "Not Found: {msg}"),
             DatabaseError::CommunicationError => write!(f, "Communication Error"),
             DatabaseError::ConnectionFailed => write!(f, "Connection Failed"),
             DatabaseError::ConnectionNotAvailable => write!(f, "Connection Not Available"),
-            DatabaseError::QueryFailed(msg) => write!(f, "Query Failed: {}", msg),
-            DatabaseError::ColumnNotFound(column) => write!(f, "Column Not Found: {}", column),
+            DatabaseError::QueryFailed(msg) => write!(f, "Query Failed: {msg}"),
+            DatabaseError::ColumnNotFound(column) => write!(f, "Column Not Found: {column}"),
             DatabaseError::ProtocolNotSupported => write!(f, "Protocol Not Supported"),
             DatabaseError::NotImplemented => write!(f, "Not Implemented"),
-            DatabaseError::Unknown(msg) => write!(f, "Unknown Error: {}", msg),
+            DatabaseError::Unknown(msg) => write!(f, "Unknown Error: {msg}"),
             DatabaseError::DatabaseInconsistence(msg) => {
-                write!(f, "Database Inconsistency: {}", msg)
+                write!(f, "Database Inconsistency: {msg}")
             }
-            DatabaseError::MigrationFailed(msg) => write!(f, "Migration Failed: {}", msg),
+            DatabaseError::MigrationFailed(msg) => write!(f, "Migration Failed: {msg}"),
         }
     }
 }
@@ -46,7 +46,6 @@ impl std::error::Error for DatabaseError {
 
 impl From<SqlxError> for DatabaseError {
     fn from(value: SqlxError) -> Self {
-        eprintln!("sqlx error: {}", value);
         match value {
             SqlxError::ColumnNotFound(column_name) => Self::ColumnNotFound(column_name),
             SqlxError::Io(_) | SqlxError::Tls(_) => Self::CommunicationError,
