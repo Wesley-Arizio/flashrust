@@ -84,9 +84,13 @@ impl App {
     }
 
     pub async fn run(database_url: &str, address: &str) {
-        let pool: Pool<DB> = AuthDatabase::connect(database_url)
-            .await
-            .expect("Failed to connect to the database");
+        let pool: Pool<DB> = match AuthDatabase::connect(database_url).await {
+            Ok(pool) => pool,
+            Err(err) => {
+                tracing::error!("Failed to connect to the database: {:?}", err);
+                return;
+            }
+        };
 
         let app = App::app(pool).await;
 
