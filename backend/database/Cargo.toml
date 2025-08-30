@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sqlx = { version = "0.8.0", features = ["runtime-tokio", "uuid", "chrono"] }
+sqlx = { version = "0.8.0", features = ["runtime-tokio-rustls", "uuid", "chrono", "tls-rustls"] }
 async-trait = "0.1.81"
