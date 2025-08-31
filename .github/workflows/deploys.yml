@@ -55,7 +55,7 @@ jobs:
           aws ecs update-service --cluster ${{ vars.ECS_CLUSTER_STAGING }} --service ${{ vars.ECS_SERVICE_STAGING }} --task-definition "$NEW_REVISION" --region ${{ vars.AWS_REGION }}
           aws ecs wait services-stable --cluster ${{ vars.ECS_CLUSTER_STAGING }} --services ${{ vars.ECS_SERVICE_STAGING }} --region ${{ vars.AWS_REGION }}
       - name: Install sqlx-cli
-        run: cargo install sqlx-cli --no-default-features --features postgres
+        run: cargo install sqlx-cli --no-default-features --features rustls,postgres
       - name: Run sqlx migrations
         working-directory: ./backend/auth-database
         run: sqlx migrate run --database-url=${{ secrets.AUTH_POSTGRES_DATABASE_STAGING }}
@@ -83,7 +83,7 @@ jobs:
           aws ecs update-service --cluster ${{ vars.ECS_CLUSTER_PRODUCTION }} --service ${{ vars.ECS_SERVICE_PRODUCTION }} --task-definition "$NEW_REVISION" --region ${{ vars.AWS_REGION }}
           aws ecs wait services-stable --cluster ${{ vars.ECS_CLUSTER_PRODUCTION }} --services ${{ vars.ECS_SERVICE_PRODUCTION }} --region ${{ vars.AWS_REGION }}
       - name: Install sqlx-cli
-        run: cargo install sqlx-cli --no-default-features --features postgres
+        run: cargo install sqlx-cli --no-default-features --features rustls,postgres
       - name: Run sqlx migrations
         working-directory: ./backend/auth-database
         run: sqlx migrate run --database-url=${{ secrets.AUTH_POSTGRES_DATABASE_PRODUCTION }}
