@@ -74,7 +74,7 @@ where
 pub struct App;
 
 impl App {
-    pub async fn new(pool: Pool<DB>) -> Router {
+    pub async fn app(pool: Pool<DB>) -> Router {
         let app_state = Arc::new(AppState::new(pool));
 
         Router::new()
@@ -84,11 +84,15 @@ impl App {
     }
 
     pub async fn run(database_url: &str, address: &str) {
-        let pool: Pool<DB> = AuthDatabase::connect(&database_url)
-            .await
-            .expect("Failed to connect to the database");
+        let pool: Pool<DB> = match AuthDatabase::connect(database_url).await {
+            Ok(pool) => pool,
+            Err(err) => {
+                tracing::error!("Failed to connect to the database: {:?}", err);
+                return;
+            }
+        };
 
-        let app = App::new(pool).await;
+        let app = App::app(pool).await;
 
         match tokio::net::TcpListener::bind(&address).await {
             Ok(listener) => {
