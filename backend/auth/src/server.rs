@@ -5,7 +5,7 @@ use axum::{
     extract::rejection::JsonRejection,
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{get, post},
 };
 use serde::Serialize;
 use sqlx::Pool;
@@ -80,6 +80,10 @@ impl App {
         Router::new()
             .route("/sign_up", post(crate::handlers::sign_up::sign_up))
             .route("/sign_in", post(crate::handlers::sign_in::sign_in))
+            .route(
+                "/health_check",
+                get(crate::handlers::health_check::health_check),
+            )
             .with_state(app_state)
     }
 
