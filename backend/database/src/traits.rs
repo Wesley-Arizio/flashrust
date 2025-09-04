@@ -38,8 +38,7 @@ impl fmt::Display for DatabaseError {
 
 impl std::error::Error for DatabaseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        // Since DatabaseError doesn't wrap other errors in the current implementation,
-        // we return None. If you add error chaining later, update this to return the source.
+        // TODO - Improve error handling for database.
         None
     }
 }

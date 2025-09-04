@@ -1,0 +1,12 @@
+[package]
+name = "graphql-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+juniper = "0.16.2"
+actix-web = "4"
+clap = { version = "4.5.41", features = ["env", "derive"] }
+dotenvy = "0.15.7"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter"]}
