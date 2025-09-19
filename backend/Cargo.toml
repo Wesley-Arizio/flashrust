@@ -3,5 +3,6 @@ resolver = "3"
 members = [
     "auth", 
     "auth-database", 
-    "database"
+    "database", 
+    "graphql-core"
 ]
