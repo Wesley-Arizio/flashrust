@@ -100,16 +100,15 @@ pub trait EntityRepository {
 }
 
 #[async_trait::async_trait]
-pub trait BaseDatabase<Db>
-where
-    Db: Database,
-{
-    async fn transaction<F, T, E>(pool: &Pool<Db>, f: F) -> Result<T, E>
+pub trait BaseDatabase {
+    type Db: Database;
+
+    async fn transaction<F, T, E>(pool: &Pool<Self::Db>, f: F) -> Result<T, E>
     where
         T: Send,
         E: From<DatabaseError>,
         F: for<'a> FnOnce(
-                &'a mut Transaction<'_, Db>,
+                &'a mut Transaction<'_, Self::Db>,
             ) -> Pin<Box<dyn Future<Output = Result<T, E>> + Send + 'a>>
             + Send,
     {
@@ -124,4 +123,6 @@ where
             .map_err(|e| E::from(DatabaseError::from(e)))?;
         Ok(result)
     }
+
+    async fn connect(connection_string: &str) -> Result<Pool<Self::Db>, sqlx::Error>;
 }
